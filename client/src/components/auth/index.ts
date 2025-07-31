@@ -3,3 +3,4 @@ export { default as RegisterForm } from './RegisterForm';
 export { default as ForgotPasswordForm } from './ForgotPasswordForm';
 export { default as EmailVerificationPage } from './EmailVerificationPage';
 export { default as ProtectedRoute } from './ProtectedRoute';
+export { default as OAuthCallback } from './OAuthCallback';

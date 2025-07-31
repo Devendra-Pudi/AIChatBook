@@ -1,4 +1,4 @@
 // Services exports
-export * from './firebase';
+export * from './supabase';
 export * from './socket';
 export * from './ai';

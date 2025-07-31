@@ -23,7 +23,7 @@ import {
   GitHub,
   Facebook,
 } from '@mui/icons-material';
-import { AuthService } from '../../services/auth';
+import { authService } from '../../services/supabase/auth';
 
 // Validation schema
 const loginSchema = z.object({
@@ -66,16 +66,26 @@ const LoginForm: React.FC = () => {
     setError(null);
 
     try {
-      await AuthService.signInWithEmail(data.email, data.password);
-      navigate(from, { replace: true });
+      const { user, error: signInError } = await authService.signIn({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (signInError) {
+        throw new Error(signInError.message);
+      }
+
+      if (user) {
+        navigate(from, { replace: true });
+      }
     } catch (error) {
       const errorMessage = (error as Error).message;
       setError(errorMessage);
       
       // Set specific field errors based on error type
-      if (errorMessage.includes('email')) {
+      if (errorMessage.toLowerCase().includes('email')) {
         setFormError('email', { message: errorMessage });
-      } else if (errorMessage.includes('password')) {
+      } else if (errorMessage.toLowerCase().includes('password')) {
         setFormError('password', { message: errorMessage });
       }
     } finally {
@@ -88,21 +98,15 @@ const LoginForm: React.FC = () => {
     setError(null);
 
     try {
-      switch (provider) {
-        case 'google':
-          await AuthService.signInWithGoogle();
-          break;
-        case 'github':
-          await AuthService.signInWithGithub();
-          break;
-        case 'facebook':
-          await AuthService.signInWithFacebook();
-          break;
+      const { error: oauthError } = await authService.signInWithOAuth(provider);
+      
+      if (oauthError) {
+        throw new Error(oauthError.message);
       }
-      navigate(from, { replace: true });
+
+      // OAuth redirect will handle navigation
     } catch (error) {
       setError((error as Error).message);
-    } finally {
       setLoading(false);
     }
   };
@@ -162,18 +166,20 @@ const LoginForm: React.FC = () => {
             helperText={errors.password?.message}
             sx={{ mb: 2 }}
             disabled={loading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    disabled={loading}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      disabled={loading}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
 

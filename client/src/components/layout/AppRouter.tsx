@@ -7,8 +7,9 @@ import {
   ForgotPasswordForm,
   EmailVerificationPage,
   ProtectedRoute,
+  OAuthCallback,
 } from '../auth';
-import Dashboard from '../dashboard/Dashboard';
+import { ChatPage } from '../chat';
 import { Box, CircularProgress } from '@mui/material';
 
 const AppRouter: React.FC = () => {
@@ -57,12 +58,18 @@ const AppRouter: React.FC = () => {
           element={<EmailVerificationPage />}
         />
 
+        {/* OAuth callback route */}
+        <Route
+          path="/auth/callback"
+          element={<OAuthCallback />}
+        />
+
         {/* Protected routes */}
         <Route
           path="/"
           element={
             <ProtectedRoute requireEmailVerification={true}>
-              <Dashboard />
+              <ChatPage />
             </ProtectedRoute>
           }
         />

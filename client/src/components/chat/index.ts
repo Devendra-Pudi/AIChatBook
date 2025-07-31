@@ -1,1 +1,1 @@
-// Chat components exports
+export { default as ChatPage } from './ChatPage';

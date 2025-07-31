@@ -2,7 +2,7 @@
 
 ## Introduction
 
-ChatAI is a modern, real-time messaging application that combines traditional chat functionality with integrated AI chatbot capabilities. The application will provide users with a WhatsApp-like experience while offering access to an intelligent AI assistant powered by Together AI's LLM API. The platform will support both one-on-one and group messaging, media sharing, and seamless AI interactions within a responsive web interface.
+ChatAI is a modern, real-time messaging application that combines traditional chat functionality with integrated AI chatbot capabilities. The application will provide users with a WhatsApp-like experience while offering access to an intelligent AI assistant powered by Together AI's LLM API. The platform will support both one-on-one and group messaging, media sharing, and seamless AI interactions within a responsive web interface. The application uses Supabase as the backend database and authentication provider, offering a robust and scalable alternative to Firebase.
 
 ## Requirements
 

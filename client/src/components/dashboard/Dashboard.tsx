@@ -10,14 +10,14 @@ import {
 } from '@mui/material';
 import { Logout, Settings, Chat } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { AuthService } from '../../services/auth';
+import { authService } from '../../services/auth';
 
 const Dashboard: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
 
   const handleSignOut = async () => {
     try {
-      await AuthService.signOut();
+      await authService.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -122,13 +122,13 @@ const Dashboard: React.FC = () => {
           </Typography>
           <Box>
             <Typography variant="body2" color="text.secondary">
-              🚀 Firebase Authentication: Connected
+              🚀 Supabase Authentication: Connected
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              🔥 Firestore Database: Connected
+              🗄️ Supabase Database: Connected
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              📁 Firebase Storage: Connected
+              📁 Supabase Storage: Connected
             </Typography>
             <Typography variant="body2" color="text.secondary" mt={2}>
               Ready for the next development phase!

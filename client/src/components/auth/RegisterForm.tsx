@@ -24,7 +24,7 @@ import {
   Facebook,
   CheckCircle,
 } from '@mui/icons-material';
-import { AuthService } from '../../services/auth';
+import { authService } from '../../services/supabase/auth';
 
 // Validation schema
 const registerSchema = z
@@ -86,24 +86,30 @@ const RegisterForm: React.FC = () => {
     setError(null);
 
     try {
-      await AuthService.registerWithEmail({
+      const { user, error: signUpError } = await authService.signUp({
         email: data.email,
         password: data.password,
         displayName: data.displayName,
       });
-      
-      setSuccess(true);
-      
-      // Redirect to email verification page after a short delay
-      setTimeout(() => {
-        navigate('/verify-email');
-      }, 2000);
+
+      if (signUpError) {
+        throw new Error(signUpError.message);
+      }
+
+      if (user) {
+        setSuccess(true);
+        
+        // Redirect to email verification page after a short delay
+        setTimeout(() => {
+          navigate('/verify-email');
+        }, 2000);
+      }
     } catch (error) {
       const errorMessage = (error as Error).message;
       setError(errorMessage);
       
       // Set specific field errors based on error type
-      if (errorMessage.includes('email')) {
+      if (errorMessage.toLowerCase().includes('email')) {
         setFormError('email', { message: errorMessage });
       }
     } finally {
@@ -116,21 +122,15 @@ const RegisterForm: React.FC = () => {
     setError(null);
 
     try {
-      switch (provider) {
-        case 'google':
-          await AuthService.signInWithGoogle();
-          break;
-        case 'github':
-          await AuthService.signInWithGithub();
-          break;
-        case 'facebook':
-          await AuthService.signInWithFacebook();
-          break;
+      const { error: oauthError } = await authService.signInWithOAuth(provider);
+      
+      if (oauthError) {
+        throw new Error(oauthError.message);
       }
-      navigate('/');
+
+      // OAuth redirect will handle navigation
     } catch (error) {
       setError((error as Error).message);
-    } finally {
       setLoading(false);
     }
   };
@@ -252,18 +252,20 @@ const RegisterForm: React.FC = () => {
             helperText={errors.password?.message}
             sx={{ mb: 1 }}
             disabled={loading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    disabled={loading}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      disabled={loading}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
 
@@ -308,18 +310,20 @@ const RegisterForm: React.FC = () => {
             helperText={errors.confirmPassword?.message}
             sx={{ mb: 2 }}
             disabled={loading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    edge="end"
-                    disabled={loading}
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                      disabled={loading}
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
 

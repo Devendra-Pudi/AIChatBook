@@ -22,12 +22,12 @@
   - push to a new master branch of github repo : https://github.com/Devendra-Pudi/AIChatBook.git
   - _Requirements: 8.4, 8.5_
 
-- [-] 2. Firebase Configuration and Authentication Setup
+- [-] 2. Supabase Configuration and Authentication Setup
 
 
 
-  - Configure Firebase project with Authentication, Firestore, and Storage
-  - Implement Firebase SDK initialization and configuration
+  - Configure Supabase project with Authentication, PostgreSQL database, and Storage
+  - Implement Supabase client initialization and configuration
   - Create authentication service with email/password and OAuth providers
   - Build login and registration forms with validation using React Hook Form
   - Implement protected route wrapper and authentication context
@@ -35,6 +35,10 @@
   - _Requirements: 1.1, 1.2, 2.1_
 
 - [ ] 3. Core UI Components and Layout
+
+
+
+
   - Create main application layout with sidebar and chat area
   - Build reusable UI components (buttons, inputs, modals) with MUI and Tailwind
   - Implement responsive design patterns for mobile and desktop
@@ -46,8 +50,8 @@
 - [ ] 4. State Management and Data Models
   - Set up Zustand stores for user, chats, messages, and UI state
   - Create TypeScript interfaces for all data models (User, Chat, Message, AI)
-  - Implement custom hooks for Firebase Firestore operations
-  - Build real-time data synchronization with Firestore listeners
+  - Implement custom hooks for Supabase database operations
+  - Build real-time data synchronization with Supabase realtime subscriptions
   - Create utility functions for data validation and transformation
   - push changes to master branch
   - _Requirements: 3.1, 5.1, 9.4_
@@ -56,7 +60,7 @@
   - Set up Socket.io server with Express.js and proper CORS configuration
   - Implement Socket.io client integration in React application
   - Create event handlers for user connection, messaging, and typing indicators
-  - Build real-time message delivery system with Socket.io and Firestore backup
+  - Build real-time message delivery system with Socket.io and Supabase realtime
   - Implement online/offline status tracking and presence system
   - push changes to master branch
   - _Requirements: 3.1, 4.1, 5.1_
@@ -71,7 +75,7 @@
   - _Requirements: 3.1, 3.4, 7.4_
 
 - [ ] 7. Media Sharing and File Upload
-  - Implement Firebase Storage integration for file uploads
+  - Implement Supabase Storage integration for file uploads
   - Create media upload components with drag-and-drop support
   - Build image preview and compression functionality
   - Implement audio message recording and playback components
@@ -152,7 +156,7 @@
 
 - [ ] 15. Testing Implementation
   - Write unit tests for all React components using React Testing Library
-  - Create integration tests for Firebase operations and Socket.io events
+  - Create integration tests for Supabase operations and Socket.io events
   - Build end-to-end tests for complete user flows with Cypress
   - Implement API testing for Together AI integration
   - Create performance tests for real-time message delivery
@@ -182,8 +186,8 @@
   - _Requirements: 8.3, 8.5_
 
 - [ ] 18. Deployment and Production Setup
-  - Configure Firebase Hosting for frontend deployment
-  - Set up Firebase Functions deployment for backend services
+  - Configure Vercel or Netlify for frontend deployment
+  - Set up Supabase Edge Functions deployment for backend services
   - Implement environment-specific configurations
   - Create CI/CD pipeline with automated testing and deployment
   - Set up monitoring, logging, and analytics

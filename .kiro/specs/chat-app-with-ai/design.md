@@ -2,7 +2,7 @@
 
 ## Overview
 
-ChatAI is architected as a modern, scalable real-time messaging application with integrated AI capabilities. The system follows a client-server architecture with Firebase as the backend-as-a-service provider and React as the frontend framework. The application leverages Socket.io for real-time communication, Firebase Firestore for data persistence, and Together AI's API for intelligent chatbot functionality.
+ChatAI is architected as a modern, scalable real-time messaging application with integrated AI capabilities. The system follows a client-server architecture with Supabase as the backend-as-a-service provider and React as the frontend framework. The application leverages Supabase's real-time subscriptions and Socket.io for real-time communication, Supabase PostgreSQL database for data persistence, and Together AI's API for intelligent chatbot functionality.
 
 The design emphasizes real-time performance, security, scalability, and user experience across desktop and mobile platforms. The architecture supports both traditional peer-to-peer messaging and AI-assisted conversations within a unified interface.
 
@@ -20,20 +20,20 @@ graph TB
     
     subgraph "Communication Layer"
         D[Socket.io Client]
-        E[Firebase SDK]
+        E[Supabase Client]
         F[HTTP Client]
     end
     
     subgraph "Backend Services"
         G[Socket.io Server]
-        H[Firebase Functions]
+        H[Supabase Edge Functions]
         I[Express.js API]
     end
     
     subgraph "Data Layer"
-        J[Firebase Firestore]
-        K[Firebase Storage]
-        L[Firebase Auth]
+        J[Supabase PostgreSQL]
+        K[Supabase Storage]
+        L[Supabase Auth]
     end
     
     subgraph "External Services"
@@ -62,7 +62,7 @@ The frontend follows a modular component architecture with clear separation of c
 - **Presentation Layer**: React components with Material-UI and Tailwind CSS
 - **State Management**: Zustand for global state, React hooks for local state
 - **Business Logic**: Custom hooks and service layers
-- **Data Access**: Firebase SDK and Socket.io client integration
+- **Data Access**: Supabase client and Socket.io client integration
 - **Routing**: React Router for navigation and protected routes
 
 ### Real-time Communication Flow
@@ -72,16 +72,16 @@ sequenceDiagram
     participant U1 as User 1
     participant C1 as Client 1
     participant S as Socket.io Server
-    participant F as Firebase
+    participant SB as Supabase
     participant C2 as Client 2
     participant U2 as User 2
     
     U1->>C1: Send Message
-    C1->>F: Store Message
+    C1->>SB: Store Message
     C1->>S: Emit Message Event
     S->>C2: Broadcast Message
     C2->>U2: Display Message
-    F-->>C2: Sync Message (backup)
+    SB-->>C2: Sync Message (realtime)
 ```
 
 ## Components and Interfaces
@@ -134,9 +134,9 @@ interface SocketEvents {
 }
 ```
 
-#### Firebase Cloud Functions
+#### Supabase Edge Functions
 ```typescript
-interface CloudFunctions {
+interface EdgeFunctions {
   // AI Integration
   processAIMessage: (message: string, context: ConversationContext) => Promise<AIResponse>;
   
@@ -165,22 +165,22 @@ interface TogetherAIService {
 }
 ```
 
-#### Firebase Service Interfaces
+#### Supabase Service Interfaces
 ```typescript
-interface FirebaseService {
+interface SupabaseService {
   // Authentication
   signIn(email: string, password: string): Promise<User>;
   signUp(userData: UserRegistration): Promise<User>;
   signOut(): Promise<void>;
   
-  // Firestore Operations
+  // Database Operations
   createMessage(messageData: MessageData): Promise<string>;
   getMessages(chatId: string, limit?: number): Promise<Message[]>;
   subscribeToMessages(chatId: string, callback: (messages: Message[]) => void): () => void;
   
   // Storage Operations
-  uploadFile(file: File, path: string): Promise<string>;
-  deleteFile(path: string): Promise<void>;
+  uploadFile(file: File, bucket: string, path: string): Promise<string>;
+  deleteFile(bucket: string, path: string): Promise<void>;
 }
 ```
 
@@ -309,7 +309,7 @@ interface ErrorHandler {
 
 ### Backend Error Handling
 
-#### Firebase Functions Error Handling
+#### Supabase Edge Functions Error Handling
 - **Structured Error Responses**: Consistent error format across all functions
 - **Retry Logic**: Automatic retry for transient failures
 - **Circuit Breaker**: Prevent cascade failures in AI API calls
@@ -355,9 +355,9 @@ interface SocketErrorHandler {
 
 ### Backend Testing
 
-#### Firebase Functions Testing
+#### Supabase Edge Functions Testing
 ```typescript
-interface FunctionTest {
+interface EdgeFunctionTest {
   testAIMessageProcessing(): Promise<void>;
   testUserAuthentication(): Promise<void>;
   testMessageStorage(): Promise<void>;
@@ -389,7 +389,7 @@ interface FunctionTest {
 - **Stress Testing**: System behavior under extreme conditions
 - **Message Throughput**: Real-time message delivery performance
 - **Media Handling**: File upload/download speed and optimization
-- **Database Performance**: Firestore query optimization and indexing
+- **Database Performance**: PostgreSQL query optimization and indexing
 
 This design provides a comprehensive foundation for building the ChatAI application with proper separation of concerns, scalable architecture, robust error handling, and thorough testing strategies. The modular approach ensures maintainability and allows for incremental development and feature additions.
 

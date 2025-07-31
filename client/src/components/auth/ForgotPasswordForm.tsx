@@ -12,7 +12,7 @@ import {
   Alert,
 } from '@mui/material';
 import { ArrowBack, Email } from '@mui/icons-material';
-import { AuthService } from '../../services/auth';
+import { authService } from '../../services/supabase/auth';
 
 // Validation schema
 const forgotPasswordSchema = z.object({
@@ -42,7 +42,12 @@ const ForgotPasswordForm: React.FC = () => {
     setError(null);
 
     try {
-      await AuthService.resetPassword(data.email);
+      const { error: resetError } = await authService.resetPassword(data.email);
+      
+      if (resetError) {
+        throw new Error(resetError.message);
+      }
+      
       setSuccess(true);
     } catch (error) {
       setError((error as Error).message);

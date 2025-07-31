@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { Email, CheckCircle, Refresh } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { AuthService } from '../../services/auth';
+import { authService } from '../../services/supabase/auth';
 
 const EmailVerificationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -34,12 +34,19 @@ const EmailVerificationPage: React.FC = () => {
   }, [currentUser, navigate]);
 
   const handleResendVerification = async () => {
+    if (!currentUser?.email) return;
+
     setLoading(true);
     setError(null);
     setResendSuccess(false);
 
     try {
-      await AuthService.resendEmailVerification();
+      const { error: resendError } = await authService.resendVerification(currentUser.email);
+      
+      if (resendError) {
+        throw new Error(resendError.message);
+      }
+      
       setResendSuccess(true);
     } catch (error) {
       setError((error as Error).message);
