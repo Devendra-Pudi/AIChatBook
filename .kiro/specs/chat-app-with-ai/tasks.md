@@ -1,6 +1,8 @@
 # Implementation Plan
 
-- [ ] 1. Project Setup and Foundation
+- [x] 1. Project Setup and Foundation
+
+
 
 
 
@@ -20,7 +22,10 @@
   - push to a new master branch of github repo : https://github.com/Devendra-Pudi/AIChatBook.git
   - _Requirements: 8.4, 8.5_
 
-- [ ] 2. Firebase Configuration and Authentication Setup
+- [-] 2. Firebase Configuration and Authentication Setup
+
+
+
   - Configure Firebase project with Authentication, Firestore, and Storage
   - Implement Firebase SDK initialization and configuration
   - Create authentication service with email/password and OAuth providers
