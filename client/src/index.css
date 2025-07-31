@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .chat-bubble {
+    @apply rounded-lg px-3 py-2 max-w-xs break-words;
+  }
+  
+  .chat-bubble-sent {
+    @apply bg-primary-500 text-white ml-auto;
+  }
+  
+  .chat-bubble-received {
+    @apply bg-gray-200 text-gray-900 mr-auto;
+  }
+  
+  .dark .chat-bubble-received {
+    @apply bg-gray-700 text-gray-100;
+  }
+}
