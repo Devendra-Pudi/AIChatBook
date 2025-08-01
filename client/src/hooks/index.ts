@@ -7,3 +7,5 @@ export * from './useSupabaseRealtime';
 export * from './useSocket';
 export * from './useRealtimeMessaging';
 export * from './usePresence';
+export * from './useResponsive';
+export * from './useTypingIndicator';

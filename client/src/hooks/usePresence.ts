@@ -121,7 +121,7 @@ export const usePresence = (options: UsePresenceOptions = {}) => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -136,7 +136,7 @@ export const usePresence = (options: UsePresenceOptions = {}) => {
 
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
-    
+
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
@@ -150,7 +150,7 @@ export const usePresence = (options: UsePresenceOptions = {}) => {
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };

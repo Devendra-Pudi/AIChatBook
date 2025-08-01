@@ -88,7 +88,11 @@
   - push changes to master branch
   - _Requirements: 3.1, 4.1, 5.1_
 
-- [ ] 6. Basic Messaging Functionality
+- [x] 6. Basic Messaging Functionality
+
+
+
+
   - Create message input component with text formatting and emoji support
   - Implement message display components with timestamps and read receipts
   - Build message sending and receiving functionality with real-time updates

@@ -1,80 +1,159 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
   Paper,
   IconButton,
-  TextField,
-  InputAdornment,
   Divider,
-
 } from '@mui/material';
 import {
-  Send,
-  AttachFile,
-  EmojiEmotions,
   MoreVert,
   Phone,
   VideoCall,
+  Search,
 } from '@mui/icons-material';
 import { Avatar, Dropdown } from '../ui';
+import { MessageList, MessageInput, MessageSearch } from '../chat';
 import { useResponsive } from '../../hooks';
-
-// Mock messages for demonstration
-const mockMessages = [
-  {
-    id: '1',
-    sender: 'John Doe',
-    content: 'Hey, how are you doing?',
-    timestamp: '10:30 AM',
-    isOwn: false,
-    avatar: null,
-  },
-  {
-    id: '2',
-    sender: 'You',
-    content: 'I\'m doing great! Just working on the new chat app.',
-    timestamp: '10:32 AM',
-    isOwn: true,
-    avatar: null,
-  },
-  {
-    id: '3',
-    sender: 'John Doe',
-    content: 'That sounds exciting! How\'s the progress?',
-    timestamp: '10:33 AM',
-    isOwn: false,
-    avatar: null,
-  },
-  {
-    id: '4',
-    sender: 'You',
-    content: 'Pretty good! I\'m implementing the UI components right now. The layout is coming together nicely.',
-    timestamp: '10:35 AM',
-    isOwn: true,
-    avatar: null,
-  },
-];
+import { useSupabaseMessages } from '../../hooks/useSupabaseMessages';
+import { useChatStore, useUserStore, useMessageStore } from '../../store';
+import { selectActiveChat } from '../../store/chatStore';
+import type { MessageContent, UUID } from '../../types';
 
 const ChatArea: React.FC = () => {
-  const [message, setMessage] = useState('');
-  const [messages] = useState(mockMessages);
+  const [replyTo, setReplyTo] = useState<{
+    messageId: UUID;
+    content: string;
+    sender: string;
+  } | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  
   const { isMobile, getSpacing } = useResponsive();
+  const activeChat = useChatStore(selectActiveChat);
+  const { users, currentUser } = useUserStore();
+  const { sendMessage, deleteMessage, addReaction } = useSupabaseMessages(activeChat?.chatId);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      // TODO: Implement message sending logic
-      console.log('Sending message:', message);
-      setMessage('');
-    }
-  };
+  // Handle sending messages
+  const handleSendMessage = useCallback(async (content: MessageContent, replyToId?: UUID) => {
+    if (!activeChat || !currentUser) return;
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+    try {
+      await sendMessage(activeChat.chatId, content, replyToId);
+      setReplyTo(null); // Clear reply after sending
+    } catch (error) {
+      console.error('Failed to send message:', error);
     }
-  };
+  }, [activeChat, currentUser, sendMessage]);
+
+  // Handle message reply
+  const handleReply = useCallback((messageId: UUID) => {
+    if (!activeChat) return;
+    
+    const messages = useMessageStore.getState().messages[activeChat.chatId] || [];
+    const message = messages.find(m => m.messageId === messageId);
+    
+    if (message) {
+      const senderName = users[message.sender]?.displayName || 'Unknown User';
+      setReplyTo({
+        messageId,
+        content: message.content.text || 'Media message',
+        sender: senderName,
+      });
+    }
+  }, [activeChat, users]);
+
+  // Handle message editing
+  const handleEdit = useCallback(async (messageId: UUID) => {
+    // This would typically open an edit dialog or inline editor
+    // For now, we'll just log it
+    console.log('Edit message:', messageId);
+  }, []);
+
+  // Handle message deletion
+  const handleDelete = useCallback(async (messageId: UUID) => {
+    if (!activeChat) return;
+    
+    try {
+      await deleteMessage(messageId, activeChat.chatId, false);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
+  }, [activeChat, deleteMessage]);
+
+  // Handle message reactions
+  const handleReaction = useCallback(async (messageId: UUID, emoji: string) => {
+    try {
+      await addReaction(messageId, emoji);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+    }
+  }, [addReaction]);
+
+  // Handle search message selection
+  const handleSearchMessageSelect = useCallback((message: any) => {
+    // This would typically scroll to the message in the chat
+    console.log('Navigate to message:', message);
+  }, []);
+
+  // Get chat participant info
+  const getChatInfo = useCallback(() => {
+    if (!activeChat) return null;
+
+    if (activeChat.type === 'ai') {
+      return {
+        name: 'AI Assistant',
+        status: 'Online',
+        avatar: undefined,
+        isOnline: true,
+      };
+    }
+
+    if (activeChat.type === 'group') {
+      return {
+        name: activeChat.groupInfo?.name || 'Group Chat',
+        status: `${activeChat.participants.length} members`,
+        avatar: activeChat.groupInfo?.photoURL,
+        isOnline: true,
+      };
+    }
+
+    // Private chat - get other participant
+    const otherParticipant = activeChat.participants.find(p => p !== currentUser?.uid);
+    const otherUser = otherParticipant ? users[otherParticipant] : null;
+
+    return {
+      name: otherUser?.displayName || 'Unknown User',
+      status: otherUser?.status === 'online' ? 'Online' : 'Offline',
+      avatar: otherUser?.photoURL,
+      isOnline: otherUser?.status === 'online',
+    };
+  }, [activeChat, currentUser, users]);
+
+  const chatInfo = getChatInfo();
+
+  // Show empty state if no active chat
+  if (!activeChat) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h5" color="text.secondary" gutterBottom>
+            Welcome to ChatAI
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Select a chat to start messaging
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -90,8 +169,12 @@ const ChatArea: React.FC = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: getSpacing(1, 2) }}>
-            <Avatar online={true} size={isMobile ? "small" : "medium"}>
-              J
+            <Avatar 
+              src={chatInfo?.avatar}
+              online={chatInfo?.isOnline} 
+              size={isMobile ? "small" : "medium"}
+            >
+              {chatInfo?.name?.[0] || 'C'}
             </Avatar>
             <Box>
               <Typography 
@@ -99,29 +182,38 @@ const ChatArea: React.FC = () => {
                 fontWeight={600}
                 noWrap
               >
-                John Doe
+                {chatInfo?.name || 'Chat'}
               </Typography>
               <Typography 
                 variant="body2" 
                 color="text.secondary"
                 sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
               >
-                Online
+                {chatInfo?.status || 'Unknown'}
               </Typography>
             </Box>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {!isMobile && (
+            <IconButton 
+              size={isMobile ? "small" : "medium"}
+              onClick={() => setShowSearch(true)}
+              title="Search messages"
+            >
+              <Search />
+            </IconButton>
+            
+            {!isMobile && activeChat.type === 'private' && (
               <>
-                <IconButton color="primary" size={isMobile ? "small" : "medium"}>
+                <IconButton color="primary" size="medium" title="Voice call">
                   <Phone />
                 </IconButton>
-                <IconButton color="primary" size={isMobile ? "small" : "medium"}>
+                <IconButton color="primary" size="medium" title="Video call">
                   <VideoCall />
                 </IconButton>
               </>
             )}
+            
             <Dropdown
               trigger={
                 <IconButton size={isMobile ? "small" : "medium"}>
@@ -129,136 +221,57 @@ const ChatArea: React.FC = () => {
                 </IconButton>
               }
               items={[
-                { id: 'call', label: 'Voice Call', icon: <Phone /> },
-                { id: 'video', label: 'Video Call', icon: <VideoCall /> },
-                { id: 'info', label: 'Contact Info', divider: true },
+                ...(activeChat.type === 'private' ? [
+                  { id: 'call', label: 'Voice Call', icon: <Phone /> },
+                  { id: 'video', label: 'Video Call', icon: <VideoCall /> },
+                ] : []),
+                { id: 'search', label: 'Search Messages', icon: <Search /> },
+                { id: 'info', label: 'Chat Info' },
                 { id: 'mute', label: 'Mute Notifications' },
-                { id: 'block', label: 'Block Contact' },
+                ...(activeChat.type === 'private' ? [
+                  { id: 'block', label: 'Block Contact' },
+                ] : []),
               ]}
+              onItemClick={(itemId) => {
+                if (itemId === 'search') {
+                  setShowSearch(true);
+                }
+              }}
             />
           </Box>
         </Box>
       </Paper>
 
       {/* Messages Area */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          p: getSpacing(1, 2),
-          display: 'flex',
-          flexDirection: 'column',
-          gap: getSpacing(1, 2),
-        }}
-        className="scrollbar-thin"
-      >
-        {messages.map((msg) => (
-          <Box
-            key={msg.id}
-            sx={{
-              display: 'flex',
-              justifyContent: msg.isOwn ? 'flex-end' : 'flex-start',
-              alignItems: 'flex-end',
-              gap: 1,
-            }}
-          >
-            {!msg.isOwn && (
-              <Avatar size="small">
-                {msg.sender[0]}
-              </Avatar>
-            )}
-            
-            <Box
-              sx={{
-                maxWidth: isMobile ? '85%' : '70%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: msg.isOwn ? 'flex-end' : 'flex-start',
-              }}
-            >
-              <Paper
-                elevation={1}
-                sx={{
-                  p: 1.5,
-                  bgcolor: msg.isOwn ? 'primary.main' : 'background.paper',
-                  color: msg.isOwn ? 'white' : 'text.primary',
-                  borderRadius: 2,
-                  borderBottomRightRadius: msg.isOwn ? 0.5 : 2,
-                  borderBottomLeftRadius: msg.isOwn ? 2 : 0.5,
-                }}
-              >
-                <Typography variant="body2">
-                  {msg.content}
-                </Typography>
-              </Paper>
-              
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mt: 0.5, px: 1 }}
-              >
-                {msg.timestamp}
-              </Typography>
-            </Box>
-            
-            {msg.isOwn && (
-              <Avatar size="small">
-                Y
-              </Avatar>
-            )}
-          </Box>
-        ))}
-      </Box>
+      <MessageList
+        chatId={activeChat.chatId}
+        onReply={handleReply}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onReaction={handleReaction}
+      />
 
       <Divider />
 
       {/* Message Input */}
-      <Box sx={{ p: getSpacing(1, 2) }}>
-        <TextField
-          fullWidth
-          multiline
-          maxRows={isMobile ? 3 : 4}
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          size={isMobile ? "small" : "medium"}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <IconButton size="small">
-                  <AttachFile />
-                </IconButton>
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {!isMobile && (
-                    <IconButton size="small">
-                      <EmojiEmotions />
-                    </IconButton>
-                  )}
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={handleSendMessage}
-                    disabled={!message.trim()}
-                  >
-                    <Send />
-                  </IconButton>
-                </Box>
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: isMobile ? 2 : 3,
-              fontSize: isMobile ? '0.875rem' : '1rem',
-            },
-          }}
-        />
-      </Box>
+      <MessageInput
+        onSendMessage={handleSendMessage}
+        replyTo={replyTo || undefined}
+        onCancelReply={() => setReplyTo(null)}
+        placeholder={
+          activeChat.type === 'ai' 
+            ? 'Ask the AI assistant...' 
+            : 'Type a message...'
+        }
+      />
+
+      {/* Message Search Dialog */}
+      <MessageSearch
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        onMessageSelect={handleSearchMessageSelect}
+        chatId={activeChat.chatId}
+      />
     </Box>
   );
 };
