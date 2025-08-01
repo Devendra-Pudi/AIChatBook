@@ -1,10 +1,7 @@
 import { io, Socket } from 'socket.io-client';
-import { 
+import type { 
   Message, 
-  TypingEvent, 
-  UserPresenceEvent, 
-  MessageEvent,
-  UUID 
+  UserPresenceEvent
 } from '../../types/index.js';
 
 export interface SocketEvents {

@@ -1,9 +1,10 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { socketClient, MessageData, TypingData, ReadReceiptData, UserStatusData } from '../services/socket/socketClient.js';
+import { socketClient } from '../services/socket/socketClient.js';
+import type { MessageData, TypingData, ReadReceiptData, UserStatusData } from '../services/socket/socketClient.js';
 import { useUserStore } from '../store/userStore.js';
 import { useMessageStore } from '../store/messageStore.js';
 import { useChatStore } from '../store/chatStore.js';
-import { Message, UserPresenceEvent } from '../types/index.js';
+import type { Message, UserPresenceEvent } from '../types/index.js';
 
 export interface UseSocketOptions {
   autoConnect?: boolean;

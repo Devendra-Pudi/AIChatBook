@@ -3,7 +3,7 @@ import { supabase } from '../../config/supabase.js';
 import { useMessageStore } from '../../store/messageStore.js';
 import { useChatStore } from '../../store/chatStore.js';
 import { useUserStore } from '../../store/userStore.js';
-import { Message, Chat, User, RealtimePayload } from '../../types/index.js';
+import type { Message, Chat, RealtimePayload } from '../../types/index.js';
 
 export class RealtimeService {
   private subscriptions = new Map<string, any>();
@@ -172,7 +172,7 @@ export class RealtimeService {
 
       // Only add to store if not from Socket.io (to avoid duplicates)
       if (!this.isFromSocket(message)) {
-        const { addMessageToChat, updateChatLastMessage } = useMessageStore.getState();
+        const { addMessageToChat } = useMessageStore.getState();
         const { updateChatLastMessage: updateChatLast } = useChatStore.getState();
         
         addMessageToChat(message.chatId, message);

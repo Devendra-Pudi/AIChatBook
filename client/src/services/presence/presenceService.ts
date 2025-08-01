@@ -136,7 +136,7 @@ export class PresenceService {
   }
 
   // Handle user leaving presence
-  private handlePresenceLeave(userId: string, presences: any[]): void {
+  private handlePresenceLeave(userId: string, _presences: any[]): void {
     if (userId === this.currentUserId) return;
 
     const { setUserOnlineStatus, updateUserStatusWithTimestamp } = useUserStore.getState();

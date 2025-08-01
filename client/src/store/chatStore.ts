@@ -22,7 +22,7 @@ interface ChatStore extends ChatState {
 
 export const useChatStore = create<ChatStore>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       chats: {},
       activeChat: null,
@@ -71,7 +71,7 @@ export const useChatStore = create<ChatStore>()(
       removeChat: (chatId) =>
         set(
           (state) => {
-            const { [chatId]: removed, ...remainingChats } = state.chats;
+            const { [chatId]: _removed, ...remainingChats } = state.chats;
             return {
               chats: remainingChats,
               activeChat: state.activeChat === chatId ? null : state.activeChat,

@@ -22,7 +22,7 @@ interface UserStore extends UserState {
 export const useUserStore = create<UserStore>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set) => ({
         // Initial state
         currentUser: null,
         users: {},
@@ -146,8 +146,8 @@ export const useUserStore = create<UserStore>()(
               const user = state.users[userId];
               if (!user) return state;
 
-              const userStatus = status === 'online' ? 'online' : 'offline';
-              const updatedUser = {
+              const userStatus: User['status'] = status === 'online' ? 'online' : 'offline';
+              const updatedUser: User = {
                 ...user,
                 status: userStatus,
                 lastSeen: new Date().toISOString(),

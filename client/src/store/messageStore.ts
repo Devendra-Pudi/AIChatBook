@@ -24,7 +24,7 @@ interface MessageStore extends MessageState {
 
 export const useMessageStore = create<MessageStore>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       messages: {},
       typingUsers: {},
@@ -260,7 +260,7 @@ export const useMessageStore = create<MessageStore>()(
 
                 newMessages[chatId] = [...chatMessages];
                 if (updatedReactions.length === 0) {
-                  const { [emoji]: removed, ...remainingReactions } = message.reactions;
+                  const { [emoji]: _removed, ...remainingReactions } = message.reactions;
                   newMessages[chatId][messageIndex] = {
                     ...message,
                     reactions: remainingReactions,
@@ -376,7 +376,7 @@ export const useMessageStore = create<MessageStore>()(
         set(
           (state) => {
             if (chatId) {
-              const { [chatId]: removed, ...remainingMessages } = state.messages;
+              const { [chatId]: _removed, ...remainingMessages } = state.messages;
               return { messages: remainingMessages };
             }
             return { messages: {}, typingUsers: {}, error: null };

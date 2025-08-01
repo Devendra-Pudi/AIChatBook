@@ -72,7 +72,9 @@
   - push changes to master branch
   - _Requirements: 3.1, 5.1, 9.4_
 
-- [-] 5. Socket.io Integration and Real-time Communication
+- [x] 5. Socket.io Integration and Real-time Communication
+
+
 
 
 

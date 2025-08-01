@@ -15,9 +15,7 @@ export const usePresence = (options: UsePresenceOptions = {}) => {
   const {
     autoInitialize = true,
     trackActivity = true,
-    onStatusChange,
-    onUserOnline,
-    onUserOffline
+    onStatusChange
   } = options;
 
   const { currentUser } = useUserStore();
