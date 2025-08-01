@@ -12,6 +12,8 @@ interface UserStore extends UserState {
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   updateUserStatus: (userId: UUID, status: User['status']) => void;
+  updateUserStatusWithTimestamp: (userId: UUID, status: User['status'], lastSeen: string) => void;
+  setUserOnlineStatus: (userId: UUID, status: 'online' | 'offline') => void;
   updateUserSettings: (userId: UUID, settings: Partial<User['settings']>) => void;
   clearUsers: () => void;
   logout: () => void;
@@ -112,6 +114,55 @@ export const useUserStore = create<UserStore>()(
             },
             false,
             'updateUserStatus'
+          ),
+
+        updateUserStatusWithTimestamp: (userId, status, lastSeen) =>
+          set(
+            (state) => {
+              const user = state.users[userId];
+              if (!user) return state;
+
+              const updatedUser = {
+                ...user,
+                status,
+                lastSeen,
+              };
+
+              return {
+                users: { ...state.users, [userId]: updatedUser },
+                currentUser:
+                  state.currentUser?.uid === userId
+                    ? updatedUser
+                    : state.currentUser,
+              };
+            },
+            false,
+            'updateUserStatusWithTimestamp'
+          ),
+
+        setUserOnlineStatus: (userId, status) =>
+          set(
+            (state) => {
+              const user = state.users[userId];
+              if (!user) return state;
+
+              const userStatus = status === 'online' ? 'online' : 'offline';
+              const updatedUser = {
+                ...user,
+                status: userStatus,
+                lastSeen: new Date().toISOString(),
+              };
+
+              return {
+                users: { ...state.users, [userId]: updatedUser },
+                currentUser:
+                  state.currentUser?.uid === userId
+                    ? updatedUser
+                    : state.currentUser,
+              };
+            },
+            false,
+            'setUserOnlineStatus'
           ),
 
         updateUserSettings: (userId, settings) =>

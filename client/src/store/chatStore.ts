@@ -12,6 +12,7 @@ interface ChatStore extends ChatState {
   incrementUnreadCount: (chatId: UUID) => void;
   resetUnreadCount: (chatId: UUID) => void;
   updateLastMessage: (chatId: UUID, lastMessage: Chat['lastMessage']) => void;
+  updateChatLastMessage: (chatId: UUID, lastMessage: Chat['lastMessage']) => void;
   addParticipant: (chatId: UUID, userId: UUID) => void;
   removeParticipant: (chatId: UUID, userId: UUID) => void;
   setLoading: (isLoading: boolean) => void;
@@ -136,6 +137,27 @@ export const useChatStore = create<ChatStore>()(
           },
           false,
           'updateLastMessage'
+        ),
+
+      updateChatLastMessage: (chatId, lastMessage) =>
+        set(
+          (state) => {
+            const chat = state.chats[chatId];
+            if (!chat) return state;
+
+            return {
+              chats: {
+                ...state.chats,
+                [chatId]: {
+                  ...chat,
+                  lastMessage,
+                  updatedAt: new Date().toISOString(),
+                },
+              },
+            };
+          },
+          false,
+          'updateChatLastMessage'
         ),
 
       addParticipant: (chatId, userId) =>

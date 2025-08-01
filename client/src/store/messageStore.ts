@@ -6,12 +6,14 @@ interface MessageStore extends MessageState {
   // Actions
   setMessages: (chatId: UUID, messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  addMessageToChat: (chatId: UUID, message: Message) => void;
   updateMessage: (messageId: UUID, updates: Partial<Message>) => void;
   removeMessage: (chatId: UUID, messageId: UUID) => void;
   markMessageAsRead: (messageId: UUID, userId: UUID) => void;
+  markMessageAsReadWithDetails: (chatId: UUID, messageId: UUID, userId: UUID, timestamp: string) => void;
   addReaction: (messageId: UUID, emoji: string, userId: UUID) => void;
   removeReaction: (messageId: UUID, emoji: string, userId: UUID) => void;
-  setTypingUsers: (chatId: UUID, userIds: UUID[]) => void;
+  setTypingUsers: (chatId: UUID, userId: UUID, isTyping: boolean) => void;
   addTypingUser: (chatId: UUID, userId: UUID) => void;
   removeTypingUser: (chatId: UUID, userId: UUID) => void;
   updateMessageStatus: (messageId: UUID, status: Message['status']) => void;
@@ -65,6 +67,34 @@ export const useMessageStore = create<MessageStore>()(
           },
           false,
           'addMessage'
+        ),
+
+      addMessageToChat: (chatId, message) =>
+        set(
+          (state) => {
+            const chatMessages = state.messages[chatId] || [];
+            const existingIndex = chatMessages.findIndex(
+              (m) => m.messageId === message.messageId
+            );
+
+            let updatedMessages;
+            if (existingIndex >= 0) {
+              // Update existing message
+              updatedMessages = [...chatMessages];
+              updatedMessages[existingIndex] = message;
+            } else {
+              // Add new message in chronological order
+              updatedMessages = [...chatMessages, message].sort(
+                (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+            }
+
+            return {
+              messages: { ...state.messages, [chatId]: updatedMessages },
+            };
+          },
+          false,
+          'addMessageToChat'
         ),
 
       updateMessage: (messageId, updates) =>
@@ -142,6 +172,37 @@ export const useMessageStore = create<MessageStore>()(
           },
           false,
           'markMessageAsRead'
+        ),
+
+      markMessageAsReadWithDetails: (chatId, messageId, userId, timestamp) =>
+        set(
+          (state) => {
+            const chatMessages = state.messages[chatId];
+            if (!chatMessages) return state;
+
+            const messageIndex = chatMessages.findIndex(
+              (m) => m.messageId === messageId
+            );
+
+            if (messageIndex >= 0) {
+              const updatedMessages = [...chatMessages];
+              updatedMessages[messageIndex] = {
+                ...chatMessages[messageIndex],
+                readBy: {
+                  ...chatMessages[messageIndex].readBy,
+                  [userId]: timestamp,
+                },
+              };
+
+              return {
+                messages: { ...state.messages, [chatId]: updatedMessages },
+              };
+            }
+
+            return state;
+          },
+          false,
+          'markMessageAsReadWithDetails'
         ),
 
       addReaction: (messageId, emoji, userId) =>
@@ -223,11 +284,24 @@ export const useMessageStore = create<MessageStore>()(
           'removeReaction'
         ),
 
-      setTypingUsers: (chatId, userIds) =>
+      setTypingUsers: (chatId, userId, isTyping) =>
         set(
-          (state) => ({
-            typingUsers: { ...state.typingUsers, [chatId]: userIds },
-          }),
+          (state) => {
+            const currentTyping = state.typingUsers[chatId] || [];
+            let updatedTyping;
+            
+            if (isTyping) {
+              updatedTyping = currentTyping.includes(userId) 
+                ? currentTyping 
+                : [...currentTyping, userId];
+            } else {
+              updatedTyping = currentTyping.filter(id => id !== userId);
+            }
+            
+            return {
+              typingUsers: { ...state.typingUsers, [chatId]: updatedTyping },
+            };
+          },
           false,
           'setTypingUsers'
         ),

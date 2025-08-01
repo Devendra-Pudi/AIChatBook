@@ -3,6 +3,7 @@ import { validateEnv } from './config';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { SocketProvider } from './contexts/SocketContext';
 import AppRouter from './components/layout/AppRouter';
 
 function App() {
@@ -15,7 +16,9 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
-          <AppRouter />
+          <SocketProvider>
+            <AppRouter />
+          </SocketProvider>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
