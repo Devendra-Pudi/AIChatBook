@@ -7,6 +7,7 @@ import {
   TextField,
   InputAdornment,
   Divider,
+
 } from '@mui/material';
 import {
   Send,
@@ -16,7 +17,8 @@ import {
   Phone,
   VideoCall,
 } from '@mui/icons-material';
-import { Avatar } from '../ui';
+import { Avatar, Dropdown } from '../ui';
+import { useResponsive } from '../../hooks';
 
 // Mock messages for demonstration
 const mockMessages = [
@@ -57,6 +59,7 @@ const mockMessages = [
 const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
   const [messages] = useState(mockMessages);
+  const { isMobile, getSpacing } = useResponsive();
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -79,37 +82,60 @@ const ChatArea: React.FC = () => {
       <Paper
         elevation={1}
         sx={{
-          p: 2,
+          p: getSpacing(1.5, 2),
           borderRadius: 0,
           borderBottom: 1,
           borderColor: 'divider',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar online={true} size="medium">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: getSpacing(1, 2) }}>
+            <Avatar online={true} size={isMobile ? "small" : "medium"}>
               J
             </Avatar>
             <Box>
-              <Typography variant="subtitle1" fontWeight={600}>
+              <Typography 
+                variant={isMobile ? "body1" : "subtitle1"} 
+                fontWeight={600}
+                noWrap
+              >
                 John Doe
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+              >
                 Online
               </Typography>
             </Box>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton color="primary">
-              <Phone />
-            </IconButton>
-            <IconButton color="primary">
-              <VideoCall />
-            </IconButton>
-            <IconButton>
-              <MoreVert />
-            </IconButton>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {!isMobile && (
+              <>
+                <IconButton color="primary" size={isMobile ? "small" : "medium"}>
+                  <Phone />
+                </IconButton>
+                <IconButton color="primary" size={isMobile ? "small" : "medium"}>
+                  <VideoCall />
+                </IconButton>
+              </>
+            )}
+            <Dropdown
+              trigger={
+                <IconButton size={isMobile ? "small" : "medium"}>
+                  <MoreVert />
+                </IconButton>
+              }
+              items={[
+                { id: 'call', label: 'Voice Call', icon: <Phone /> },
+                { id: 'video', label: 'Video Call', icon: <VideoCall /> },
+                { id: 'info', label: 'Contact Info', divider: true },
+                { id: 'mute', label: 'Mute Notifications' },
+                { id: 'block', label: 'Block Contact' },
+              ]}
+            />
           </Box>
         </Box>
       </Paper>
@@ -119,11 +145,12 @@ const ChatArea: React.FC = () => {
         sx={{
           flex: 1,
           overflow: 'auto',
-          p: 2,
+          p: getSpacing(1, 2),
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: getSpacing(1, 2),
         }}
+        className="scrollbar-thin"
       >
         {messages.map((msg) => (
           <Box
@@ -143,7 +170,7 @@ const ChatArea: React.FC = () => {
             
             <Box
               sx={{
-                maxWidth: '70%',
+                maxWidth: isMobile ? '85%' : '70%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: msg.isOwn ? 'flex-end' : 'flex-start',
@@ -186,15 +213,16 @@ const ChatArea: React.FC = () => {
       <Divider />
 
       {/* Message Input */}
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: getSpacing(1, 2) }}>
         <TextField
           fullWidth
           multiline
-          maxRows={4}
+          maxRows={isMobile ? 3 : 4}
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
+          size={isMobile ? "small" : "medium"}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -206,9 +234,11 @@ const ChatArea: React.FC = () => {
             endAdornment: (
               <InputAdornment position="end">
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  <IconButton size="small">
-                    <EmojiEmotions />
-                  </IconButton>
+                  {!isMobile && (
+                    <IconButton size="small">
+                      <EmojiEmotions />
+                    </IconButton>
+                  )}
                   <IconButton
                     size="small"
                     color="primary"
@@ -223,7 +253,8 @@ const ChatArea: React.FC = () => {
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
+              borderRadius: isMobile ? 2 : 3,
+              fontSize: isMobile ? '0.875rem' : '1rem',
             },
           }}
         />

@@ -9,24 +9,23 @@ import {
   Typography,
   Divider,
   IconButton,
-  TextField,
-  InputAdornment,
+
   Chip,
   Badge,
 } from '@mui/material';
 import {
-  Search,
   Add,
   SmartToy,
   Group,
   MoreVert,
 } from '@mui/icons-material';
-import { Avatar } from '../ui';
+import { Avatar, SearchInput } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   onMobileClose?: () => void;
   onProfileClick?: () => void;
+  isMobile?: boolean;
 }
 
 // Mock data for demonstration
@@ -73,7 +72,7 @@ const mockChats = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<string | null>('1');
   const { userProfile, currentUser } = useAuth();
@@ -92,18 +91,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick }) => {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* User Profile Section */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: isMobile ? 1.5 : 2, borderBottom: 1, borderColor: 'divider' }}>
         <Box 
           sx={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: 2,
+            gap: isMobile ? 1.5 : 2,
             cursor: 'pointer',
-            borderRadius: 1,
+            borderRadius: 1.5,
             p: 1,
             mx: -1,
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
               bgcolor: 'action.hover',
+              transform: 'scale(1.02)',
             },
           }}
           onClick={onProfileClick}
@@ -111,19 +112,28 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick }) => {
           <Avatar
             src={userProfile?.photoURL || currentUser?.photoURL || undefined}
             online={true}
-            size="medium"
+            size={isMobile ? "small" : "medium"}
           >
             {userProfile?.displayName?.[0] || currentUser?.displayName?.[0] || 'U'}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" noWrap>
+            <Typography 
+              variant={isMobile ? "body1" : "subtitle1"} 
+              noWrap
+              sx={{ fontWeight: 600 }}
+            >
               {userProfile?.displayName || currentUser?.displayName || 'User'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              noWrap
+              sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+            >
               {userProfile?.status || 'Online'}
             </Typography>
           </Box>
-          <IconButton size="small">
+          <IconButton size="small" sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}>
             <MoreVert />
           </IconButton>
         </Box>
@@ -131,23 +141,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick }) => {
 
       {/* Search and New Chat */}
       <Box sx={{ p: 2 }}>
-        <TextField
-          fullWidth
-          size="small"
+        <SearchInput
           placeholder="Search chats..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search color="action" />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 2 }}
+          onChange={setSearchQuery}
+          showFilters={false}
+          debounceMs={200}
         />
         
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
           <IconButton
             color="primary"
             sx={{

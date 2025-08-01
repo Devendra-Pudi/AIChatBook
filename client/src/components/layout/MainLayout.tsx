@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
   AppBar,
   Toolbar,
   Typography,
-  IconButton,
+  useMediaQuery,
+  useTheme as useMuiTheme,
+  Fade,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -16,10 +18,12 @@ import {
 import { useTheme } from '../../contexts/ThemeContext';
 import { UserProfile } from '../profile';
 import { SettingsModal } from '../settings';
+import { IconButton } from '../ui';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 
 const DRAWER_WIDTH = 320;
+const MOBILE_DRAWER_WIDTH = 280;
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -30,9 +34,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { mode, toggleTheme } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  // Close mobile drawer when switching to desktop
+  useEffect(() => {
+    if (!isMobile && mobileOpen) {
+      setMobileOpen(false);
+    }
+  }, [isMobile, mobileOpen]);
+
+  const drawerWidth = isMobile ? MOBILE_DRAWER_WIDTH : DRAWER_WIDTH;
+
+  // Handle responsive drawer behavior
+  const handleDrawerClose = () => {
+    if (isMobile) {
+      setMobileOpen(false);
+    }
   };
 
   return (
@@ -40,41 +63,89 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* App Bar */}
       <AppBar
         position="fixed"
+        elevation={isMobile ? 2 : 1}
         sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
           zIndex: (theme) => theme.zIndex.drawer + 1,
+          backdropFilter: 'blur(8px)',
+          backgroundColor: mode === 'dark' 
+            ? 'rgba(30, 41, 59, 0.9)' 
+            : 'rgba(255, 255, 255, 0.9)',
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            tooltip="Open menu"
+            sx={{ 
+              mr: 2, 
+              display: { md: 'none' },
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
           >
             <MenuIcon />
           </IconButton>
           
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant={isMobile ? "h6" : "h5"} 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontWeight: 600,
+              background: mode === 'dark' 
+                ? 'linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%)'
+                : 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             ChatAI
           </Typography>
           
-          <IconButton color="inherit" onClick={toggleTheme}>
-            {mode === 'dark' ? <LightMode /> : <DarkMode />}
-          </IconButton>
-          
-          <IconButton color="inherit" onClick={() => setShowSettings(true)}>
-            <Settings />
-          </IconButton>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <IconButton 
+              color="inherit" 
+              onClick={toggleTheme}
+              tooltip={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            >
+              <Fade in={true} timeout={300}>
+                {mode === 'dark' ? <LightMode /> : <DarkMode />}
+              </Fade>
+            </IconButton>
+            
+            <IconButton 
+              color="inherit" 
+              onClick={() => setShowSettings(true)}
+              tooltip="Settings"
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            >
+              <Settings />
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
       {/* Sidebar */}
       <Box
         component="nav"
-        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
       >
         {/* Mobile drawer */}
         <Drawer
@@ -88,13 +159,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: DRAWER_WIDTH,
+              width: drawerWidth,
+              backgroundImage: 'none',
+              borderRight: `1px solid ${muiTheme.palette.divider}`,
+              backgroundColor: 'background.paper',
             },
           }}
         >
           <Sidebar 
-            onMobileClose={() => setMobileOpen(false)} 
+            onMobileClose={handleDrawerClose} 
             onProfileClick={() => setShowProfile(true)}
+            isMobile={true}
           />
         </Drawer>
         
@@ -105,12 +180,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             display: { xs: 'none', md: 'block' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: DRAWER_WIDTH,
+              width: drawerWidth,
+              backgroundImage: 'none',
+              borderRight: `1px solid ${muiTheme.palette.divider}`,
+              backgroundColor: 'background.paper',
             },
           }}
           open
         >
-          <Sidebar onProfileClick={() => setShowProfile(true)} />
+          <Sidebar 
+            onProfileClick={() => setShowProfile(true)}
+            isMobile={false}
+          />
         </Drawer>
       </Box>
 
@@ -119,14 +200,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: { md: `calc(100% - ${drawerWidth}px)` },
           height: '100vh',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
+          backgroundColor: 'background.default',
         }}
       >
-        <Toolbar /> {/* Spacer for AppBar */}
-        {children || <ChatArea />}
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} /> {/* Spacer for AppBar */}
+        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          {children || <ChatArea />}
+        </Box>
       </Box>
 
       {/* Modals */}

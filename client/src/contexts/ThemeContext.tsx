@@ -10,6 +10,7 @@ interface ThemeContextType {
   mode: ThemeMode;
   toggleTheme: () => void;
   theme: Theme;
+  setMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -110,10 +111,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   }, [mode]);
 
+  const setThemeMode = (newMode: ThemeMode) => {
+    setMode(newMode);
+    localStorage.setItem('theme-mode', newMode);
+  };
+
   const value = {
     mode,
     toggleTheme,
     theme,
+    setMode: setThemeMode,
   };
 
   return (
