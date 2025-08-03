@@ -31,7 +31,7 @@ const ChatArea: React.FC = () => {
   const { isMobile, getSpacing } = useResponsive();
   const activeChat = useChatStore(selectActiveChat);
   const { users, currentUser } = useUserStore();
-  const { sendMessage, deleteMessage, addReaction } = useSupabaseMessages(activeChat?.chatId);
+  const { sendMessage } = useSupabaseMessages(activeChat?.chatId);
 
   // Handle sending messages
   const handleSendMessage = useCallback(async (content: MessageContent, replyToId?: UUID) => {
@@ -62,32 +62,7 @@ const ChatArea: React.FC = () => {
     }
   }, [activeChat, users]);
 
-  // Handle message editing
-  const handleEdit = useCallback(async (messageId: UUID) => {
-    // This would typically open an edit dialog or inline editor
-    // For now, we'll just log it
-    console.log('Edit message:', messageId);
-  }, []);
 
-  // Handle message deletion
-  const handleDelete = useCallback(async (messageId: UUID) => {
-    if (!activeChat) return;
-    
-    try {
-      await deleteMessage(messageId, activeChat.chatId, false);
-    } catch (error) {
-      console.error('Failed to delete message:', error);
-    }
-  }, [activeChat, deleteMessage]);
-
-  // Handle message reactions
-  const handleReaction = useCallback(async (messageId: UUID, emoji: string) => {
-    try {
-      await addReaction(messageId, emoji);
-    } catch (error) {
-      console.error('Failed to add reaction:', error);
-    }
-  }, [addReaction]);
 
   // Handle search message selection
   const handleSearchMessageSelect = useCallback((message: any) => {
@@ -246,9 +221,6 @@ const ChatArea: React.FC = () => {
       <MessageList
         chatId={activeChat.chatId}
         onReply={handleReply}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onReaction={handleReaction}
       />
 
       <Divider />

@@ -1,4 +1,4 @@
-import { io, Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 import type { 
   Message, 
   UserPresenceEvent
@@ -139,19 +139,19 @@ class SocketClient {
         resolve();
       });
 
-      this.socket.on('user:connected', (data) => {
+      this.socket.on('user:connected', (data: any) => {
         console.log('User authenticated:', data);
         this.emitToListeners('user:connected', data);
       });
 
-      this.socket.on('connect_error', (error) => {
+      this.socket.on('connect_error', (error: any) => {
         console.error('Socket connection error:', error);
         this.isConnected = false;
         this.emitToListeners('connect_error', error);
         reject(error);
       });
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('disconnect', (reason: any) => {
         console.log('Socket disconnected:', reason);
         this.isConnected = false;
         this.emitToListeners('disconnect', reason);
