@@ -88,6 +88,7 @@ export interface Message {
   reactions: Record<string, UUID[]>; // emoji -> userIds
   type: MessageType;
   status: MessageStatus;
+  forwardedFrom?: UUID; // Reference to original message if forwarded
 }
 
 export type MessageType = 'user' | 'ai' | 'system';

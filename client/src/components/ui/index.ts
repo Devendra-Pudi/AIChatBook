@@ -14,3 +14,10 @@ export { Badge, StatusBadge } from './Badge';
 export { Dropdown } from './Dropdown';
 export { SearchInput } from './SearchInput';
 export { Grid, ResponsiveGridContainer } from './Grid';
+
+// Media components
+export { FileDropZone } from './FileDropZone';
+export { AudioRecorder } from './AudioRecorder';
+export { AudioPlayer } from './AudioPlayer';
+export { MediaGallery } from './MediaGallery';
+export { MediaUploadDialog } from './MediaUploadDialog';

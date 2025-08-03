@@ -95,7 +95,7 @@ export const validateLogin = (data: unknown): ValidationResult => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         errors[path] = err.message;
       });
@@ -112,7 +112,7 @@ export const validateRegister = (data: unknown): ValidationResult => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         errors[path] = err.message;
       });
@@ -129,7 +129,7 @@ export const validateProfile = (data: unknown): ValidationResult => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         errors[path] = err.message;
       });
@@ -146,7 +146,7 @@ export const validateMessageContent = (data: unknown): ValidationResult => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         errors[path] = err.message;
       });
@@ -163,7 +163,7 @@ export const validateGroupInfo = (data: unknown): ValidationResult => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         const path = err.path.join('.');
         errors[path] = err.message;
       });

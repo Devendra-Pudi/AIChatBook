@@ -11,7 +11,6 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  useTheme,
 } from '@mui/material';
 import {
   MoreVert,
@@ -24,10 +23,17 @@ import {
   DoneAll,
   Schedule,
   Error,
+  Download,
+  Forward,
 } from '@mui/icons-material';
-import { Avatar } from '../ui';
-import { useResponsive } from '../../hooks';
+import { Avatar, AudioPlayer } from '../ui';
+import { useResponsive, useMessageManagement } from '../../hooks';
 import { useUserStore } from '../../store';
+import { MessageEditDialog } from './MessageEditDialog';
+import { MessageDeleteDialog } from './MessageDeleteDialog';
+import { MessageForwardDialog } from './MessageForwardDialog';
+import { MessageReplyContext } from './MessageReplyContext';
+import { EmojiPicker } from './EmojiPicker';
 import type { Message, UUID } from '../../types';
 
 interface MessageBubbleProps {
@@ -35,30 +41,29 @@ interface MessageBubbleProps {
   showAvatar?: boolean;
   showTimestamp?: boolean;
   onReply?: (messageId: UUID) => void;
-  onEdit?: (messageId: UUID) => void;
-  onDelete?: (messageId: UUID) => void;
-  onReaction?: (messageId: UUID, emoji: string) => void;
   getUserDisplayName?: (userId: UUID) => string;
   getUserAvatar?: (userId: UUID) => string | undefined;
 }
 
-const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   showAvatar = true,
   showTimestamp = true,
   onReply,
-  onEdit,
-  onDelete,
-  onReaction,
   getUserDisplayName,
   getUserAvatar,
 }) => {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [reactionAnchor, setReactionAnchor] = useState<HTMLElement | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+  
   const { currentUser } = useUserStore();
   const { isMobile, getSpacing } = useResponsive();
+  const { editMessage, deleteMessage, forwardMessage, toggleReaction } = useMessageManagement(message.chatId);
 
   const isOwnMessage = currentUser?.uid === message.sender;
   const senderName = getUserDisplayName?.(message.sender) || 'Unknown User';
@@ -115,8 +120,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     setReactionAnchor(null);
   };
 
-  const handleQuickReaction = (emoji: string) => {
-    onReaction?.(message.messageId, emoji);
+  const handleQuickReaction = async (emoji: string) => {
+    await toggleReaction(message.messageId, emoji);
     handleReactionClose();
   };
 
@@ -131,13 +136,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     if (message.content.text) {
       // Simple markdown-like formatting
       let text = message.content.text;
-      
+
       // Bold text
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
+
       // Italic text
       text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      
+
       // Code text
       text = text.replace(/`(.*?)`/g, '<code style="background-color: rgba(0,0,0,0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
 
@@ -199,7 +204,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         case 'audio':
           return (
             <Box>
-              <audio src={media.url} controls style={{ width: '100%' }} />
+              <AudioPlayer
+                src={media.url}
+                fileName={media.fileName}
+                duration={media.duration}
+                compact={true}
+                showDownload={true}
+              />
               {message.content.text && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   {message.content.text}
@@ -213,6 +224,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     // Handle file content
     if (message.content.file) {
       const { file } = message.content;
+      const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+      };
+
       return (
         <Box>
           <Paper
@@ -223,14 +240,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: 'action.selected',
+              },
             }}
+            onClick={() => window.open(file.url, '_blank')}
           >
-            <Typography variant="body2" sx={{ flex: 1 }}>
+            <Typography variant="body2" sx={{ flex: 1 }} noWrap>
               📎 {file.fileName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {(file.size / 1024 / 1024).toFixed(1)} MB
+              {formatFileSize(file.size)}
             </Typography>
+            <IconButton size="small" onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}>
+              <Download fontSize="small" />
+            </IconButton>
           </Paper>
           {message.content.text && (
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -257,7 +282,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             size="small"
             variant={userIds.includes(currentUser?.uid || '') ? 'filled' : 'outlined'}
             color={userIds.includes(currentUser?.uid || '') ? 'primary' : 'default'}
-            onClick={() => onReaction?.(message.messageId, emoji)}
+            onClick={() => toggleReaction(message.messageId, emoji)}
             sx={{
               height: 24,
               fontSize: '0.75rem',
@@ -316,6 +341,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </Typography>
         )}
 
+        {/* Reply context */}
+        {message.replyTo && (
+          <MessageReplyContext
+            replyToId={message.replyTo}
+            getUserDisplayName={getUserDisplayName}
+          />
+        )}
+
         {/* Message bubble */}
         <Box sx={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 0.5 }}>
           <Paper
@@ -332,7 +365,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}
           >
             {renderMessageContent()}
-            
+
             {/* Message edited indicator */}
             {message.edited && (
               <Typography
@@ -345,6 +378,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 }}
               >
                 (edited)
+              </Typography>
+            )}
+
+            {/* Forwarded indicator */}
+            {message.forwardedFrom && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  mt: 0.5,
+                  opacity: 0.7,
+                  fontSize: '0.7rem',
+                  fontStyle: 'italic',
+                }}
+              >
+                Forwarded
               </Typography>
             )}
           </Paper>
@@ -431,7 +480,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </ListItemIcon>
           <ListItemText>Reply</ListItemText>
         </MenuItem>
-        
+
         <MenuItem onClick={handleCopyMessage}>
           <ListItemIcon>
             <ContentCopy fontSize="small" />
@@ -439,18 +488,25 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <ListItemText>Copy</ListItemText>
         </MenuItem>
 
+        <MenuItem onClick={() => { setForwardDialogOpen(true); handleMenuClose(); }}>
+          <ListItemIcon>
+            <Forward fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Forward</ListItemText>
+        </MenuItem>
+
         {isOwnMessage && (
           <>
             <Divider />
-            <MenuItem onClick={() => { onEdit?.(message.messageId); handleMenuClose(); }}>
+            <MenuItem onClick={() => { setEditDialogOpen(true); handleMenuClose(); }}>
               <ListItemIcon>
                 <Edit fontSize="small" />
               </ListItemIcon>
               <ListItemText>Edit</ListItemText>
             </MenuItem>
-            
-            <MenuItem 
-              onClick={() => { onDelete?.(message.messageId); handleMenuClose(); }}
+
+            <MenuItem
+              onClick={() => { setDeleteDialogOpen(true); handleMenuClose(); }}
               sx={{ color: 'error.main' }}
             >
               <ListItemIcon>
@@ -462,36 +518,35 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </Menu>
 
-      {/* Quick Reactions Menu */}
-      <Menu
+      {/* Enhanced Emoji Picker */}
+      <EmojiPicker
         anchorEl={reactionAnchor}
         open={Boolean(reactionAnchor)}
         onClose={handleReactionClose}
-        PaperProps={{
-          sx: { 
-            p: 1,
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 0.5,
-          },
-        }}
-      >
-        {QUICK_REACTIONS.map((emoji) => (
-          <IconButton
-            key={emoji}
-            size="small"
-            onClick={() => handleQuickReaction(emoji)}
-            sx={{
-              fontSize: '1.2rem',
-              '&:hover': {
-                transform: 'scale(1.2)',
-              },
-            }}
-          >
-            {emoji}
-          </IconButton>
-        ))}
-      </Menu>
+        onEmojiSelect={handleQuickReaction}
+      />
+
+      {/* Message Management Dialogs */}
+      <MessageEditDialog
+        open={editDialogOpen}
+        message={message}
+        onClose={() => setEditDialogOpen(false)}
+        onSave={editMessage}
+      />
+
+      <MessageDeleteDialog
+        open={deleteDialogOpen}
+        message={message}
+        onClose={() => setDeleteDialogOpen(false)}
+        onDelete={deleteMessage}
+      />
+
+      <MessageForwardDialog
+        open={forwardDialogOpen}
+        message={message}
+        onClose={() => setForwardDialogOpen(false)}
+        onForward={forwardMessage}
+      />
     </Box>
   );
 };

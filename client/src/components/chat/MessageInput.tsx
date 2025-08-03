@@ -1,10 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Box,
   TextField,
   IconButton,
   InputAdornment,
-  Popover,
   Typography,
 } from '@mui/material';
 import {
@@ -14,11 +13,14 @@ import {
   FormatBold,
   FormatItalic,
   Code,
+  Close,
 } from '@mui/icons-material';
-import { useResponsive } from '../../hooks';
+import { useResponsive, useMessageManagement } from '../../hooks';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { useChatStore } from '../../store';
 import { selectActiveChat } from '../../store/chatStore';
+import { MediaUploadDialog } from '../ui/MediaUploadDialog';
+import { EmojiPicker } from './EmojiPicker';
 import type { MessageContent, UUID } from '../../types';
 
 interface MessageInputProps {
@@ -33,27 +35,7 @@ interface MessageInputProps {
   onCancelReply?: () => void;
 }
 
-// Common emojis for quick access
-const COMMON_EMOJIS = [
-  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
-  '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰',
-  '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
-  '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
-  '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
-  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠',
-  '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨',
-  '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥',
-  '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧',
-  '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
-  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑',
-  '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻',
-  '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸',
-  '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋',
-  '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️',
-  '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕',
-  '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜',
-  '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅',
-];
+
 
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
@@ -64,7 +46,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
+  const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const textFieldRef = useRef<HTMLInputElement>(null);
+  const draftTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { isMobile, getSpacing } = useResponsive();
   
   // Get active chat for typing indicators
@@ -73,6 +58,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     chatId: activeChat?.chatId || '',
     enabled: Boolean(activeChat?.chatId),
   });
+
+  // Message management for draft functionality
+  const { draft, saveDraft, deleteDraft } = useMessageManagement(activeChat?.chatId);
 
   const handleSendMessage = useCallback(() => {
     if (message.trim() && !disabled) {
@@ -84,12 +72,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       setMessage('');
       stopTyping(); // Stop typing indicator when message is sent
       
+      // Clear draft when message is sent
+      deleteDraft();
+      
       // Clear reply if exists
       if (replyTo && onCancelReply) {
         onCancelReply();
       }
     }
-  }, [message, disabled, onSendMessage, replyTo, onCancelReply, stopTyping]);
+  }, [message, disabled, onSendMessage, replyTo, onCancelReply, stopTyping, deleteDraft]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -105,6 +96,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       const end = input.selectionEnd || 0;
       const newMessage = message.slice(0, start) + emoji + message.slice(end);
       setMessage(newMessage);
+      handleTypingChange(newMessage);
       
       // Set cursor position after emoji
       setTimeout(() => {
@@ -154,8 +146,79 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }, 0);
   };
 
+  const handleMediaUpload = useCallback((content: MessageContent) => {
+    onSendMessage(content, replyTo?.messageId);
+    
+    // Clear draft when media is sent
+    deleteDraft();
+    
+    // Clear reply if exists
+    if (replyTo && onCancelReply) {
+      onCancelReply();
+    }
+  }, [onSendMessage, replyTo, onCancelReply, deleteDraft]);
+
+  // Auto-save draft with debouncing
+  const handleMessageChange = useCallback((newValue: string) => {
+    setMessage(newValue);
+    handleTypingChange(newValue);
+
+    // Clear existing timeout
+    if (draftTimeoutRef.current) {
+      clearTimeout(draftTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save
+    if (newValue.trim()) {
+      draftTimeoutRef.current = setTimeout(() => {
+        saveDraft(newValue, replyTo?.messageId);
+      }, 1000); // Save after 1 second of inactivity
+    } else {
+      // Delete draft if message is empty
+      deleteDraft();
+    }
+  }, [handleTypingChange, saveDraft, deleteDraft, replyTo?.messageId]);
+
+  // Load draft when chat changes
+  useEffect(() => {
+    if (draft && draft.content && !message) {
+      setMessage(draft.content);
+    }
+  }, [draft, message]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (draftTimeoutRef.current) {
+        clearTimeout(draftTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <Box sx={{ p: getSpacing(1, 2) }}>
+      {/* Draft indicator */}
+      {draft && draft.content && !message && (
+        <Box
+          sx={{
+            mb: 1,
+            p: 1,
+            bgcolor: 'warning.light',
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Typography variant="caption" color="warning.dark">
+            📝 Draft saved
+          </Typography>
+          <IconButton size="small" onClick={() => deleteDraft()}>
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+
       {/* Reply Preview */}
       {replyTo && (
         <Box
@@ -185,7 +248,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             </Typography>
           </Box>
           <IconButton size="small" onClick={onCancelReply}>
-            ×
+            <Close />
           </IconButton>
         </Box>
       )}
@@ -199,11 +262,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           maxRows={isMobile ? 3 : 4}
           placeholder={placeholder}
           value={message}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            setMessage(newValue);
-            handleTypingChange(newValue); // Handle typing indicator
-          }}
+          onChange={(e) => handleMessageChange(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           size={isMobile ? "small" : "medium"}
@@ -239,7 +298,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               endAdornment: (
                 <InputAdornment position="end">
                   <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                    <IconButton size="small" title="Attach file">
+                    <IconButton 
+                      size="small" 
+                      title="Attach file"
+                      onClick={() => setMediaDialogOpen(true)}
+                    >
                       <AttachFile fontSize="small" />
                     </IconButton>
                     <IconButton
@@ -286,52 +349,22 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         />
       </Box>
 
-      {/* Emoji Picker Popover */}
-      <Popover
-        open={Boolean(emojiAnchor)}
+      {/* Enhanced Emoji Picker */}
+      <EmojiPicker
         anchorEl={emojiAnchor}
+        open={Boolean(emojiAnchor)}
         onClose={() => setEmojiAnchor(null)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            p: 2,
-            maxWidth: 320,
-            maxHeight: 400,
-            overflow: 'auto',
-          },
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Choose an emoji
-        </Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-          {COMMON_EMOJIS.map((emoji, index) => (
-            <IconButton
-              key={index}
-              size="small"
-              onClick={() => handleEmojiClick(emoji)}
-              sx={{
-                fontSize: '1.2rem',
-                width: 32,
-                height: 32,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                  transform: 'scale(1.2)',
-                },
-              }}
-            >
-              {emoji}
-            </IconButton>
-          ))}
-        </Box>
-      </Popover>
+        onEmojiSelect={handleEmojiClick}
+      />
+
+      {/* Media Upload Dialog */}
+      <MediaUploadDialog
+        open={mediaDialogOpen}
+        onClose={() => setMediaDialogOpen(false)}
+        onUploadComplete={handleMediaUpload}
+        chatId={activeChat?.chatId || ''}
+        title="Share Media"
+      />
     </Box>
   );
 };

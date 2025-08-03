@@ -9,3 +9,5 @@ export * from './useRealtimeMessaging';
 export * from './usePresence';
 export * from './useResponsive';
 export * from './useTypingIndicator';
+export * from './useMediaUpload';
+export * from './useMessageManagement';

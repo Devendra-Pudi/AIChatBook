@@ -16,6 +16,9 @@ export interface SocketEvents {
   'message:send': (messageData: MessageData) => void;
   'message:receive': (message: Message) => void;
   'message:read': (readData: ReadReceiptData) => void;
+  'message:edit': (data: MessageEditData) => void;
+  'message:delete': (data: MessageDeleteData) => void;
+  'message:reaction': (data: MessageReactionData) => void;
   
   // Typing events
   'message:typing:start': (data: TypingData) => void;
@@ -62,6 +65,30 @@ export interface UserStatusData {
   userId: string;
   status: 'online' | 'away' | 'busy' | 'offline';
   lastSeen: string;
+}
+
+export interface MessageEditData {
+  messageId: string;
+  chatId: string;
+  userId: string;
+  content: any;
+  editedAt: string;
+}
+
+export interface MessageDeleteData {
+  messageId: string;
+  chatId: string;
+  userId: string;
+  deleteForEveryone: boolean;
+  deletedAt: string;
+}
+
+export interface MessageReactionData {
+  messageId: string;
+  chatId: string;
+  userId: string;
+  emoji: string;
+  action: 'add' | 'remove';
 }
 
 class SocketClient {
@@ -274,6 +301,21 @@ class SocketClient {
     this.socket.on('message:read', (readData: ReadReceiptData) => {
       console.log('Message read receipt:', readData);
       this.emitToListeners('message:read', readData);
+    });
+
+    this.socket.on('message:edit', (data: MessageEditData) => {
+      console.log('Message edited:', data);
+      this.emitToListeners('message:edit', data);
+    });
+
+    this.socket.on('message:delete', (data: MessageDeleteData) => {
+      console.log('Message deleted:', data);
+      this.emitToListeners('message:delete', data);
+    });
+
+    this.socket.on('message:reaction', (data: MessageReactionData) => {
+      console.log('Message reaction:', data);
+      this.emitToListeners('message:reaction', data);
     });
 
     // Typing events

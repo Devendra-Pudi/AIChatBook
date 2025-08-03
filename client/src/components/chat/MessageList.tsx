@@ -18,9 +18,6 @@ import type { Message, UUID } from '../../types';
 interface MessageListProps {
   chatId: UUID;
   onReply?: (messageId: UUID) => void;
-  onEdit?: (messageId: UUID) => void;
-  onDelete?: (messageId: UUID) => void;
-  onReaction?: (messageId: UUID, emoji: string) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
   loading?: boolean;
@@ -29,9 +26,6 @@ interface MessageListProps {
 export const MessageList: React.FC<MessageListProps> = ({
   chatId,
   onReply,
-  onEdit,
-  onDelete,
-  onReaction,
   onLoadMore,
   hasMore = false,
   loading = false,
@@ -244,9 +238,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                   showAvatar={!isGrouped}
                   showTimestamp={!isGrouped || index === dateMessages.length - 1}
                   onReply={onReply}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onReaction={onReaction}
                   getUserDisplayName={getUserDisplayName}
                   getUserAvatar={getUserAvatar}
                 />
