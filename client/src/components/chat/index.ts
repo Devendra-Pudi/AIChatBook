@@ -5,3 +5,8 @@ export { MessageList } from './MessageList';
 export { TypingIndicator } from './TypingIndicator';
 export { MessageSearch } from './MessageSearch';
 export { ChatMediaGallery } from './ChatMediaGallery';
+export { GroupChatCreation } from './GroupChatCreation';
+export { GroupSettings } from './GroupSettings';
+export { GroupMemberList } from './GroupMemberList';
+export { AddMemberDialog } from './AddMemberDialog';
+export { GroupMessageBubble } from './GroupMessageBubble';

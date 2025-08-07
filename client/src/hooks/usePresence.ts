@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
-import { presenceService, PresenceState } from '../services/presence/presenceService.js';
+import { presenceService, type PresenceState } from '../services/presence/presenceService.js';
 import { useUserStore } from '../store/userStore.js';
-import { User } from '../types/index.js';
+import type { User } from '../types/index.js';
 
 export interface UsePresenceOptions {
   autoInitialize?: boolean;

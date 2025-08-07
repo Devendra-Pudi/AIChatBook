@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabase';
-import type { Message, MessageContent, UUID } from '../../types';
+import type {  MessageContent, UUID } from '../../types';
 
 export interface MessageDraft {
   chatId: UUID;

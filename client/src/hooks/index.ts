@@ -11,3 +11,4 @@ export * from './useResponsive';
 export * from './useTypingIndicator';
 export * from './useMediaUpload';
 export * from './useMessageManagement';
+export * from './useGroupChat';

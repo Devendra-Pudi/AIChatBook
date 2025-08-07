@@ -1,14 +1,6 @@
 import { z } from 'zod';
 import type { 
-  User, 
-  Chat, 
-  Message, 
-  LoginForm, 
-  RegisterForm, 
-  ProfileForm,
-  ValidationResult,
-  MessageContent,
-  GroupInfo
+  ValidationResult
 } from '../types';
 
 // Zod schemas for validation
@@ -211,7 +203,7 @@ export const getPasswordStrength = (password: string): {
     feedback.push('Include numbers');
   }
 
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     score += 1;
   } else {
     feedback.push('Include special characters');

@@ -9,3 +9,6 @@ export { presenceService } from './presence/presenceService.js';
 
 // Media service
 export { mediaService } from './mediaService';
+
+// Group service
+export { GroupService } from './groupService';

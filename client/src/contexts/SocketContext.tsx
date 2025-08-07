@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useSocket, UseSocketOptions } from '../hooks/useSocket.js';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useSocket, type UseSocketOptions } from '../hooks/useSocket.js';
 import { useUserStore } from '../store/userStore.js';
 import { useUIStore } from '../store/uiStore.js';
 
@@ -55,12 +55,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       setOnlineStatus(true);
       
       addNotification({
-        id: `connection-${Date.now()}`,
         type: 'success',
         title: 'Connected',
         message: 'Real-time messaging is now active',
-        timestamp: new Date().toISOString(),
-        read: false
+        read: false,
       });
     },
     onDisconnect: (reason: string) => {
@@ -74,12 +72,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       
       if (reason !== 'io client disconnect') {
         addNotification({
-          id: `disconnection-${Date.now()}`,
           type: 'warning',
           title: 'Connection Lost',
           message: 'Attempting to reconnect...',
-          timestamp: new Date().toISOString(),
-          read: false
+          read: false,
         });
       }
     },
@@ -91,12 +87,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       }));
       
       addNotification({
-        id: `error-${Date.now()}`,
         type: 'error',
         title: 'Connection Error',
         message: error.message || 'Failed to connect to real-time services',
-        timestamp: new Date().toISOString(),
-        read: false
+        read: false,
       });
     },
     ...options

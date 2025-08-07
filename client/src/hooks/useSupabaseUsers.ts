@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useUserStore } from '../store';
 import { supabase } from '../config/supabase';
 import type { User, UUID } from '../types';

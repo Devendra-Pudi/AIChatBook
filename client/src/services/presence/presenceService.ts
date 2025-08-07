@@ -1,7 +1,7 @@
 import { socketClient } from '../socket/socketClient.js';
 import { supabase } from '../../config/supabase.js';
 import { useUserStore } from '../../store/userStore.js';
-import { User } from '../../types/index.js';
+import type { User } from '../../types/index.js';
 
 export interface PresenceState {
   userId: string;

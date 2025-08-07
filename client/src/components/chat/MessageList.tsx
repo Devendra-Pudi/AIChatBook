@@ -9,10 +9,12 @@ import {
 } from '@mui/material';
 import { KeyboardArrowDown } from '@mui/icons-material';
 import { MessageBubble } from './MessageBubble';
+import { GroupMessageBubble } from './GroupMessageBubble';
 import { TypingIndicator } from './TypingIndicator';
 import { useResponsive } from '../../hooks';
-import { useMessageStore, useUserStore } from '../../store';
+import { useMessageStore, useUserStore, useChatStore } from '../../store';
 import { selectMessagesByChatId, selectTypingUsersByChatId } from '../../store/messageStore';
+import { selectChatById } from '../../store/chatStore';
 import type { Message, UUID } from '../../types';
 
 interface MessageListProps {
@@ -41,6 +43,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   const messages = useMessageStore(selectMessagesByChatId(chatId));
   const typingUsers = useMessageStore(selectTypingUsersByChatId(chatId));
   const { users } = useUserStore();
+  const chat = useChatStore(selectChatById(chatId));
 
   // Helper functions
   const getUserDisplayName = useCallback((userId: UUID) => {
@@ -231,8 +234,11 @@ export const MessageList: React.FC<MessageListProps> = ({
               const previousMessage = index > 0 ? dateMessages[index - 1] : undefined;
               const isGrouped = shouldGroupMessage(message, previousMessage);
 
+              // Use GroupMessageBubble for group chats, regular MessageBubble for others
+              const MessageComponent = chat?.type === 'group' ? GroupMessageBubble : MessageBubble;
+
               return (
-                <MessageBubble
+                <MessageComponent
                   key={message.messageId}
                   message={message}
                   showAvatar={!isGrouped}

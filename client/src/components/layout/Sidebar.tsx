@@ -9,18 +9,21 @@ import {
   Typography,
   Divider,
   IconButton,
-
   Chip,
   Badge,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   Add,
   SmartToy,
   Group,
   MoreVert,
+  Person,
 } from '@mui/icons-material';
 import { Avatar, SearchInput } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { GroupChatCreation } from '../chat/GroupChatCreation';
 
 interface SidebarProps {
   onMobileClose?: () => void;
@@ -75,6 +78,8 @@ const mockChats = [
 const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<string | null>('1');
+  const [showGroupCreation, setShowGroupCreation] = useState(false);
+  const [newChatMenuAnchor, setNewChatMenuAnchor] = useState<null | HTMLElement>(null);
   const { userProfile, currentUser } = useAuth();
 
   const filteredChats = mockChats.filter(chat =>
@@ -82,6 +87,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick, isMobi
   );
 
   const handleChatSelect = (chatId: string) => {
+    setSelectedChat(chatId);
+    onMobileClose?.();
+  };
+
+  const handleNewChatClick = (event: React.MouseEvent<HTMLElement>) => {
+    setNewChatMenuAnchor(event.currentTarget);
+  };
+
+  const handleNewChatMenuClose = () => {
+    setNewChatMenuAnchor(null);
+  };
+
+  const handleCreateGroup = () => {
+    setShowGroupCreation(true);
+    handleNewChatMenuClose();
+  };
+
+  const handleGroupCreated = (chatId: string) => {
     setSelectedChat(chatId);
     onMobileClose?.();
   };
@@ -152,6 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick, isMobi
         <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
           <IconButton
             color="primary"
+            onClick={handleNewChatClick}
             sx={{
               bgcolor: 'primary.main',
               color: 'white',
@@ -258,6 +282,32 @@ const Sidebar: React.FC<SidebarProps> = ({ onMobileClose, onProfileClick, isMobi
           ))}
         </List>
       </Box>
+
+      {/* New Chat Menu */}
+      <Menu
+        anchorEl={newChatMenuAnchor}
+        open={Boolean(newChatMenuAnchor)}
+        onClose={handleNewChatMenuClose}
+        PaperProps={{
+          sx: { minWidth: 180 },
+        }}
+      >
+        <MenuItem onClick={handleNewChatMenuClose}>
+          <Person sx={{ mr: 2 }} />
+          New Private Chat
+        </MenuItem>
+        <MenuItem onClick={handleCreateGroup}>
+          <Group sx={{ mr: 2 }} />
+          Create Group
+        </MenuItem>
+      </Menu>
+
+      {/* Group Creation Dialog */}
+      <GroupChatCreation
+        open={showGroupCreation}
+        onClose={() => setShowGroupCreation(false)}
+        onGroupCreated={handleGroupCreated}
+      />
     </Box>
   );
 };

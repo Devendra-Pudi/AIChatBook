@@ -1,6 +1,6 @@
-import { io, type Socket } from 'socket.io-client';
-import type { 
-  Message, 
+import * as io from 'socket.io-client';
+import type {
+  Message,
   UserPresenceEvent
 } from '../../types/index.js';
 
@@ -11,7 +11,7 @@ export interface SocketEvents {
   'user:online': (data: UserPresenceEvent) => void;
   'user:offline': (data: UserPresenceEvent) => void;
   'user:status': (data: UserPresenceEvent) => void;
-  
+
   // Message events
   'message:send': (messageData: MessageData) => void;
   'message:receive': (message: Message) => void;
@@ -19,15 +19,15 @@ export interface SocketEvents {
   'message:edit': (data: MessageEditData) => void;
   'message:delete': (data: MessageDeleteData) => void;
   'message:reaction': (data: MessageReactionData) => void;
-  
+
   // Typing events
   'message:typing:start': (data: TypingData) => void;
   'message:typing:stop': (data: TypingData) => void;
-  
+
   // Chat events
   'chat:join': (chatId: string) => void;
   'chat:leave': (chatId: string) => void;
-  
+
   // Error events
   'error': (error: { message: string }) => void;
   'connect_error': (error: Error) => void;
@@ -40,8 +40,8 @@ export interface MessageData {
   sender: string;
   content: {
     text?: string;
-    media?: any;
-    file?: any;
+    media?: unknown;
+    file?: unknown;
   };
   timestamp: string;
   type: 'user' | 'ai' | 'system';
@@ -71,7 +71,7 @@ export interface MessageEditData {
   messageId: string;
   chatId: string;
   userId: string;
-  content: any;
+  content: unknown;
   editedAt: string;
 }
 
@@ -92,7 +92,7 @@ export interface MessageReactionData {
 }
 
 class SocketClient {
-  private socket: Socket | null = null;
+  private socket: SocketIOClient.Socket | null = null;
   private serverUrl: string;
   private isConnected = false;
   private reconnectAttempts = 0;
@@ -101,7 +101,7 @@ class SocketClient {
   private currentUserId: string | null = null;
 
   // Event listeners storage
-  private eventListeners = new Map<string, Set<Function>>();
+  private eventListeners = new Map<string, Set<(...args: any[]) => void>>();
 
   constructor(serverUrl: string = 'http://localhost:3001') {
     this.serverUrl = serverUrl;
@@ -124,8 +124,7 @@ class SocketClient {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
-        reconnectionDelayMax: 5000,
-        maxHttpBufferSize: 1e8
+        reconnectionDelayMax: 5000
       });
 
       // Connection event handlers
@@ -133,29 +132,29 @@ class SocketClient {
         console.log('Socket connected:', this.socket?.id);
         this.isConnected = true;
         this.reconnectAttempts = 0;
-        
+
         // Authenticate user
         this.socket?.emit('user:connect', userId);
         resolve();
       });
 
-      this.socket.on('user:connected', (data: any) => {
+      this.socket.on('user:connected', (data: { userId: string; status: string; connectedUsers: string[] }) => {
         console.log('User authenticated:', data);
         this.emitToListeners('user:connected', data);
       });
 
-      this.socket.on('connect_error', (error: any) => {
+      this.socket.on('connect_error', (error: Error) => {
         console.error('Socket connection error:', error);
         this.isConnected = false;
         this.emitToListeners('connect_error', error);
         reject(error);
       });
 
-      this.socket.on('disconnect', (reason: any) => {
+      this.socket.on('disconnect', (reason: string) => {
         console.log('Socket disconnected:', reason);
         this.isConnected = false;
         this.emitToListeners('disconnect', reason);
-        
+
         // Attempt to reconnect if not a manual disconnect
         if (reason !== 'io client disconnect') {
           this.handleReconnection();
@@ -261,13 +260,13 @@ class SocketClient {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)!.add(callback);
+    this.eventListeners.get(event)!.add(callback as (...args: any[]) => void);
   }
 
   off<K extends keyof SocketEvents>(event: K, callback: SocketEvents[K]): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.delete(callback);
+      listeners.delete(callback as (...args: any[]) => void);
       if (listeners.size === 0) {
         this.eventListeners.delete(event);
       }
@@ -275,7 +274,7 @@ class SocketClient {
   }
 
   // Emit to registered listeners
-  private emitToListeners(event: string, data: any): void {
+  private emitToListeners(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(callback => {
@@ -361,9 +360,9 @@ class SocketClient {
 
     this.reconnectAttempts++;
     const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
+
     console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-    
+
     setTimeout(() => {
       if (this.currentUserId && !this.isSocketConnected()) {
         this.connect(this.currentUserId).catch(error => {

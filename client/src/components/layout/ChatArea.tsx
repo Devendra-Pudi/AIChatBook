@@ -11,10 +11,14 @@ import {
   Phone,
   VideoCall,
   Search,
+  Group,
+  Settings,
+  ExitToApp,
+  PersonAdd,
 } from '@mui/icons-material';
 import { Avatar, Dropdown } from '../ui';
-import { MessageList, MessageInput, MessageSearch } from '../chat';
-import { useResponsive } from '../../hooks';
+import { MessageList, MessageInput, MessageSearch, GroupSettings, GroupMemberList, AddMemberDialog } from '../chat';
+import { useResponsive, useGroupChat } from '../../hooks';
 import { useSupabaseMessages } from '../../hooks/useSupabaseMessages';
 import { useChatStore, useUserStore, useMessageStore } from '../../store';
 import { selectActiveChat } from '../../store/chatStore';
@@ -27,11 +31,15 @@ const ChatArea: React.FC = () => {
     sender: string;
   } | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [showGroupMembers, setShowGroupMembers] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
   
   const { isMobile, getSpacing } = useResponsive();
   const activeChat = useChatStore(selectActiveChat);
   const { users, currentUser } = useUserStore();
   const { sendMessage } = useSupabaseMessages(activeChat?.chatId);
+  const { leaveGroup, deleteGroup, isGroupAdmin, canInviteMembers } = useGroupChat();
 
   // Handle sending messages
   const handleSendMessage = useCallback(async (content: MessageContent, replyToId?: UUID) => {
@@ -69,6 +77,27 @@ const ChatArea: React.FC = () => {
     // This would typically scroll to the message in the chat
     console.log('Navigate to message:', message);
   }, []);
+
+  // Handle group actions
+  const handleLeaveGroup = useCallback(async () => {
+    if (!activeChat) return;
+    
+    try {
+      await leaveGroup(activeChat.chatId);
+    } catch (error) {
+      console.error('Failed to leave group:', error);
+    }
+  }, [activeChat, leaveGroup]);
+
+  const handleDeleteGroup = useCallback(async () => {
+    if (!activeChat) return;
+    
+    try {
+      await deleteGroup(activeChat.chatId);
+    } catch (error) {
+      console.error('Failed to delete group:', error);
+    }
+  }, [activeChat, deleteGroup]);
 
   // Get chat participant info
   const getChatInfo = useCallback(() => {
@@ -201,15 +230,42 @@ const ChatArea: React.FC = () => {
                   { id: 'video', label: 'Video Call', icon: <VideoCall /> },
                 ] : []),
                 { id: 'search', label: 'Search Messages', icon: <Search /> },
-                { id: 'info', label: 'Chat Info' },
+                ...(activeChat.type === 'group' ? [
+                  { id: 'members', label: 'Group Members', icon: <Group /> },
+                  ...(canInviteMembers(activeChat) ? [
+                    { id: 'addMember', label: 'Add Member', icon: <PersonAdd /> },
+                  ] : []),
+                  ...(isGroupAdmin(activeChat) ? [
+                    { id: 'settings', label: 'Group Settings', icon: <Settings /> },
+                  ] : []),
+                  { id: 'leave', label: 'Leave Group', icon: <ExitToApp /> },
+                ] : [
+                  { id: 'info', label: 'Chat Info' },
+                ]),
                 { id: 'mute', label: 'Mute Notifications' },
                 ...(activeChat.type === 'private' ? [
                   { id: 'block', label: 'Block Contact' },
                 ] : []),
               ]}
               onItemClick={(itemId) => {
-                if (itemId === 'search') {
-                  setShowSearch(true);
+                switch (itemId) {
+                  case 'search':
+                    setShowSearch(true);
+                    break;
+                  case 'members':
+                    setShowGroupMembers(true);
+                    break;
+                  case 'addMember':
+                    setShowAddMember(true);
+                    break;
+                  case 'settings':
+                    setShowGroupSettings(true);
+                    break;
+                  case 'leave':
+                    handleLeaveGroup();
+                    break;
+                  default:
+                    break;
                 }
               }}
             />
@@ -244,6 +300,36 @@ const ChatArea: React.FC = () => {
         onMessageSelect={handleSearchMessageSelect}
         chatId={activeChat.chatId}
       />
+
+      {/* Group Dialogs */}
+      {activeChat.type === 'group' && (
+        <>
+          <GroupSettings
+            open={showGroupSettings}
+            onClose={() => setShowGroupSettings(false)}
+            chat={activeChat}
+            onLeaveGroup={handleLeaveGroup}
+            onDeleteGroup={handleDeleteGroup}
+          />
+          
+          <GroupMemberList
+            open={showGroupMembers}
+            onClose={() => setShowGroupMembers(false)}
+            chat={activeChat}
+            onAddMember={() => {
+              setShowGroupMembers(false);
+              setShowAddMember(true);
+            }}
+          />
+          
+          <AddMemberDialog
+            open={showAddMember}
+            onClose={() => setShowAddMember(false)}
+            chat={activeChat}
+            onMembersAdded={() => setShowAddMember(false)}
+          />
+        </>
+      )}
     </Box>
   );
 };

@@ -3,7 +3,7 @@ import { useSocket } from './useSocket.js';
 import { realtimeService } from '../services/realtime/realtimeService.js';
 import { useUserStore } from '../store/userStore.js';
 import { useUIStore } from '../store/uiStore.js';
-import { MessageData } from '../services/socket/socketClient.js';
+import type { MessageData } from '../services/socket/socketClient.js';
 
 export interface UseRealtimeMessagingOptions {
   enableSocket?: boolean;
@@ -91,8 +91,7 @@ export const useRealtimeMessaging = (options: UseRealtimeMessagingOptions = {}) 
         type: 'error',
         title: 'Message Failed',
         message: 'Failed to send message. Please try again.',
-        timestamp: new Date().toISOString(),
-        read: false
+        read: false,
       });
       
       throw error;
@@ -206,8 +205,7 @@ export const useRealtimeMessaging = (options: UseRealtimeMessagingOptions = {}) 
         type: 'warning',
         title: 'Network Offline',
         message: 'You are currently offline. Messages will be sent when connection is restored.',
-        timestamp: new Date().toISOString(),
-        read: false
+        read: false,
       });
     };
 
